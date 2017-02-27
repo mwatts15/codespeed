@@ -5,12 +5,15 @@
 """
 Check if an environment exists, create otherwise
 """
+from __future__ import print_function
 import json
-import urllib2
-from optparse import OptionParser, OptionError
-from django.utils import simplejson
+from six.moves.urllib.request import Request, build_opener, urlopen
+from six.moves.urllib.error import HTTPError
+from optparse import OptionParser
+import simplejson
 
-CODESPEED_URL='http://speedcenter'
+CODESPEED_URL = 'http://localhost:8000'
+
 
 def get_options():
     """Get the options and arguments
@@ -27,6 +30,7 @@ def get_options():
 
     return options, args
 
+
 def is_environment(environment):
     """check if environment does exist
 
@@ -35,16 +39,17 @@ def is_environment(environment):
             False if it doesn't exist
     """
     url = CODESPEED_URL + '/api/v1/environment/'
-    request = urllib2.Request(url)
-    opener = urllib2.build_opener()
+    request = Request(url)
+    opener = build_opener()
     try:
         raw_data = opener.open(request)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         raise e
     data = simplejson.load(raw_data)
-    if environment in [ env['name'] for env in data['objects']]:
+    if environment in [env['name'] for env in data['objects']]:
         return True
     return False
+
 
 def create_environment(environment):
     """create the environment
@@ -55,22 +60,23 @@ def create_environment(environment):
     """
     url = CODESPEED_URL + '/api/v1/environment/'
     data = json.dumps({'name': environment})
-    request = urllib2.Request(url, data, {'Content-Type': 'application/json'})
+    request = Request(url, data, {'Content-Type': 'application/json'})
     try:
-        f = urllib2.urlopen(request)
+        f = urlopen(request)
         response = f.read()
         f.close()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         raise e
     return response
+
 
 def main():
     (options, args) = get_options()
     if is_environment(options.environment):
-        print "Found environment, doing nothing."
+        print("Found environment, doing nothing.")
     else:
-        print create_environment(options.environment)
+        print(create_environment(options.environment))
+
 
 if __name__ == "__main__":
     main()
-
